@@ -1,0 +1,38 @@
+{
+  "name": "tokenmaker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "hardhat compile",
+    "start": "java -classpath rskNode.jar -Drpc.providers.web.cors=* -Drpc.providers.web.ws.enabled=true co.rsk.Start --regtest",
+    "deploy_test": "hardhat run scripts/deploy.ts",
+    "console_test": "hardhat console --network localhost",
+    "deploy": "hardhat run scripts/deploy.ts --network testnet",
+    "console": "hardhat console --network testnet",
+    "test": "hardhat test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.2",
+    "dotenv": "^10.0.0",
+    "hardhat": "^2.6.8"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@typechain/ethers-v5": "^8.0.2",
+    "@typechain/hardhat": "^3.0.0",
+    "@types/chai": "^4.2.22",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.11.7",
+    "chai": "^4.3.4",
+    "ethereum-waffle": "^3.4.0",
+    "ethers": "^5.5.1",
+    "ts-node": "^10.4.0",
+    "typechain": "^6.0.2",
+    "typescript": "^4.4.4"
+  }
+}

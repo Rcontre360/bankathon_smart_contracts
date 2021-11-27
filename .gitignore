@@ -1,0 +1,20 @@
+#dev
+node_modules
+package-lock.json
+.env
+.eslintignore
+.eslintrc.js
+.npmignore
+.prettierignore
+.solhintignore
+
+#rsk node
+logs
+rskNode.jar
+
+#typechain
+typechain-types
+
+#Hardhat files
+cache
+artifacts
