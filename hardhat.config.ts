@@ -7,7 +7,16 @@ import "@typechain/hardhat";
 dotenv.config();
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.4",
+  solidity: {
+    compilers: [
+      {
+        version: "0.8.4",
+      },
+      {
+        version: "0.6.12",
+      },
+    ],
+  },
   networks: {
     localhost: {
       url: process.env.RSK_LOCAL || "",

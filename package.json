@@ -5,17 +5,21 @@
   "main": "index.js",
   "scripts": {
     "build": "hardhat compile",
-    "start": "java -classpath rskNode.jar -Drpc.providers.web.cors=* -Drpc.providers.web.ws.enabled=true co.rsk.Start --regtest",
-    "deploy_test": "hardhat run scripts/deploy.ts",
-    "console_test": "hardhat console --network localhost",
+    "setup": "hardhat run ./scripts/setup.js --network testnet",
     "deploy": "hardhat run scripts/deploy.ts --network testnet",
     "console": "hardhat console --network testnet",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "start_test": "java -classpath rskNode.jar -Drpc.providers.web.cors=* -Drpc.providers.web.ws.enabled=true co.rsk.Start --regtest",
+    "deploy_test": "hardhat run scripts/deploy.ts --network localhost",
+    "console_test": "hardhat console --network localhost"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@api3/airnode-abi": "^0.1.0",
+    "@api3/airnode-admin": "^0.1.5",
+    "@api3/airnode-protocol": "^0.1.0",
     "@openzeppelin/contracts": "^4.3.2",
     "dotenv": "^10.0.0",
     "hardhat": "^2.6.8"

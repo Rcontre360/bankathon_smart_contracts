@@ -55,32 +55,4 @@ contract Borrowing is Ownable {
   function getRepayValue() public {}
 
   function repayLoan(uint256 loanId, uint256 amount) public {}
-
-  function borrow(
-    uint8 age,
-    LaboralStatus status,
-    uint256 amount,
-    address recipient
-  ) public {
-    require(
-      amount < statusBorrowLimit[status] && amount < ageBorrowLimit[age],
-      "DOESNT_MEET_CONDITIONS"
-    );
-
-    asset.transfer(recipient, amount);
-    emit Borrow(recipient, amount);
-  }
-
-  function setStatusBorrowLimit(LaboralStatus status, uint256 amount)
-    public
-    onlyOwner
-  {
-    statusBorrowLimit[status] = amount;
-    emit StatusBorrowLimit(status, amount);
-  }
-
-  function setAgeBorrowLimit(uint8 age, uint256 amount) public onlyOwner {
-    ageBorrowLimit[age] = amount;
-    emit AgeBorrowLimit(age, amount);
-  }
 }
