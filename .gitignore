@@ -11,6 +11,7 @@ package-lock.json
 #rsk node
 logs
 rskNode.jar
+.airnode-starter.config.json
 
 #typechain
 typechain-types
