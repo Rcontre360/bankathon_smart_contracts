@@ -6,36 +6,60 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Lending is Ownable {
+contract Borrowing is Ownable {
   using Address for address;
   IERC20 public asset;
 
-  enum UserStatus {
+  enum BorrowingStatus {
+    Waiting,
+    Successfull,
+    Failed
+  }
+  enum LaboralStatus {
     Employee,
     SelfEmployee,
     Unemploy
   }
-  struct User {
+  struct Borrower {
     bytes id;
     uint8 age;
-    UserStatus status;
+    uint256 income;
+    uint8 professionalEvaluation;
+    uint8 transactionHistory;
+    LaboralStatus status;
   }
+
   event Borrow(address user, uint256 amount);
-  event StatusBorrowLimit(UserStatus status, uint256 amount);
+  event StatusBorrowLimit(LaboralStatus status, uint256 amount);
   event AgeBorrowLimit(uint256 age, uint256 amount);
 
-  mapping(UserStatus => uint256) public statusBorrowLimit;
+  mapping(LaboralStatus => uint256) public statusBorrowLimit;
   mapping(uint8 => uint256) public ageBorrowLimit;
 
   constructor(IERC20 _asset) {
     asset = _asset;
   }
 
+  function hasActionLoan() public {}
+
+  function newLoan() public {}
+
+  function acceptProposal() public {}
+
+  function getLoanDetails(uint256 loanId) public {}
+
+  function getLoanState(uint256 loanId) public {}
+
+  function lockLoan(uint256 loanId) public {}
+
+  function getRepayValue() public {}
+
+  function repayLoan(uint256 loanId, uint256 amount) public {}
+
   function borrow(
     uint8 age,
-    UserStatus status,
+    LaboralStatus status,
     uint256 amount,
-    uint256 period,
     address recipient
   ) public {
     require(
@@ -47,7 +71,7 @@ contract Lending is Ownable {
     emit Borrow(recipient, amount);
   }
 
-  function setStatusBorrowLimit(UserStatus status, uint256 amount)
+  function setStatusBorrowLimit(LaboralStatus status, uint256 amount)
     public
     onlyOwner
   {
