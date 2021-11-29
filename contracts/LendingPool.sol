@@ -14,6 +14,7 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
     uint256 amount;
     uint256 interest;
     uint8 installmentMonths;
+    address recipient;
   }
 
   struct Lender {
@@ -78,7 +79,7 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
   function crateLoan(
     uint256 amount,
     uint256 interest,
-    uint256 installmentMonths,
+    uint8 installmentMonths,
     address recipient
   ) public {
     Loan memory nxtLoan;

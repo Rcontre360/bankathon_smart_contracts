@@ -14,12 +14,8 @@ const endpointId =
 const requestParams = [
   {name: "_path", type: "bytes32", value: "banks.0.id"},
   {name: "_type", type: "bytes32", value: "bytes32"},
-  {name: "_path", type: "bytes32", value: "banks.0.id"},
-  {name: "_type", type: "bytes32", value: "bytes32"},
 ];
 const showResult = (data: any) => {
-  const coder = ethers.utils.defaultAbiCoder;
-  //return coder.decode(['bytes32', 'bytes32'], data)
   return ethers.utils.parseBytes32String(data)
 };
 ////////////////////////////////////////////////////////////////////////////////
@@ -125,7 +121,6 @@ async function main() {
   console.log("Request fulfilled, getting response...");
 
   // Read the fulfilled result from the blockchain
-  console.log(`Raw: ${await exampleClient.fulfilledData(requestId)}`)
   const result = showResult(await exampleClient.fulfilledData(requestId));
   console.log(`Got response: ${result}`);
 }
