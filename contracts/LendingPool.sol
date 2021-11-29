@@ -10,8 +10,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./LendToken.sol";
 
 contract LendingPool is Context, Ownable, ReentrancyGuard {
-  IERC20 assetToken;
-  LendToken peggToken;
+  struct Loan {
+    uint256 amount;
+    uint256 interest;
+    uint8 installmentMonths;
+  }
 
   struct Lender {
     uint256 accountId;
@@ -19,6 +22,13 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
     uint256 loanAmount;
     uint256 creditDecision;
   }
+
+  IERC20 assetToken;
+  LendToken peggToken;
+  uint256 public LIMIT_PARTICIPATION;
+  uint256 public LENDING_INTEREST_RATE;
+  uint256 public BORROWING_INTEREST_RATE;
+  mapping(address => Loan) public loans;
 
   constructor(IERC20 _assetToken, LendToken _peggToken) {
     assetToken = _assetToken;
@@ -30,6 +40,8 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
    */
   function deposit(uint256 amount) public nonReentrant {
     require(amount > 0, "NO_ZERO_AMOUNT");
+    require(exceedsDepositLimit(amount) == false, "AMOUNT_EXCEEDS_LIMIT");
+
     address sender = _msgSender();
     assetToken.transferFrom(sender, address(this), amount);
     peggToken.mint(sender, amount);
@@ -42,15 +54,39 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
     assetToken.transfer(sender, amount);
   }
 
-  function getProposal(uint256 proposalId) public view returns (uint256) {}
+  function setLimitDeposit(uint256 amount) public onlyOwner {
+    LIMIT_PARTICIPATION = amount;
+  }
 
-  function newProposal() public view onlyOwner {}
+  function setLendingInterest(uint256 amount) public onlyOwner {
+    LENDING_INTEREST_RATE = amount;
+  }
 
-  function getActiveLoanID() public view {}
+  function setBorrowingInterest(uint256 amount) public onlyOwner {
+    BORROWING_INTEREST_RATE = amount;
+  }
 
-  function revokeMyProposal(uint256 proposalId) public view {} //proposal Owner only
+  function poolBalance() public view returns (uint256) {
+    return assetToken.balanceOf(address(this));
+  }
 
-  function getProposalDetails(uint256 proposalId) public view {}
+  function exceedsDepositLimit(uint256 amount) public view returns (bool) {
+    uint256 sum = amount + poolBalance();
+    return (amount * 100) / sum > LIMIT_PARTICIPATION;
+  }
 
-  function callAirnode() public view {}
+  function crateLoan(
+    uint256 amount,
+    uint256 interest,
+    uint256 installmentMonths,
+    address recipient
+  ) public {
+    Loan memory nxtLoan;
+    nxtLoan.amount = amount;
+    nxtLoan.interest = interest;
+    nxtLoan.installmentMonths = installmentMonths;
+    nxtLoan.recipient = recipient;
+    loans[recipient] = nxtLoan;
+    assetToken.transfer(recipient, amount);
+  }
 }
