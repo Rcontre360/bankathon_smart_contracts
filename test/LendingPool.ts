@@ -45,7 +45,10 @@ describe("LendingPool", function () {
 
     await this.pool.deposit(firstDeposit);
     await this.pool.setLimitDeposit(LIMIT_DEPOSIT_PERCENTAGE);
-    await expect(this.pool.deposit(secondDeposit)).to.be.revertedWith('');
+
+    const limitDeposit = await this.pool.limitParticipation();
+    const poolBalance = await this.token.balanceOf(this.pool.address);
+    await expect(this.pool.deposit((Number(poolBalance) * Number(limitDeposit) / 100 + 2))).to.be.revertedWith('');
 
     const lendTokenReceived = await this.lendToken.balanceOf(owner.address);
 
@@ -56,13 +59,15 @@ describe("LendingPool", function () {
     const [owner] = await ethers.getSigners();
     const withdrawAmount = '100'
     const prevWithdrawAmount = await this.token.balanceOf(owner.address);
+    const prevLendTokenAmount = await this.lendToken.balanceOf(owner.address);
+
     this.lendToken.approve(this.pool.address, withdrawAmount);
     this.pool.withdraw(withdrawAmount);
 
     const lendTokenAmount = await this.lendToken.balanceOf(owner.address);
     const assetTokenAmount = await this.token.balanceOf(owner.address);
 
-    expect(lendTokenAmount).to.equal('0');
+    expect(Number(prevLendTokenAmount) - Number(lendTokenAmount)).to.equal(Number(withdrawAmount));
     expect(Number(assetTokenAmount) - Number(prevWithdrawAmount)).to.equal(Number(withdrawAmount));
   })
 

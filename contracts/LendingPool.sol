@@ -45,8 +45,7 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
   IScoreCalculator public scoreCalculator;
   LendToken public peggToken;
   int256 public expectedInterest; //this is EXPECTED interest received. It assumes all debt will be paid.
-  uint256 public LIMIT_PARTICIPATION = 100;
-  uint256 public BORROWING_INTEREST_RATE;
+  uint256 public limitParticipation = 100;
   mapping(address => Loan) public loans;
 
   constructor(IERC20 _assetToken, IScoreCalculator _scoreCalculator) {
@@ -75,16 +74,12 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
   }
 
   function setLimitDeposit(uint256 amount) public onlyOwner {
-    LIMIT_PARTICIPATION = amount;
-  }
-
-  function setBorrowingInterest(uint256 amount) public onlyOwner {
-    BORROWING_INTEREST_RATE = amount;
+    limitParticipation = amount;
   }
 
   function exceedsDepositLimit(uint256 amount) public view returns (bool) {
     uint256 sum = amount + poolBalance();
-    return (amount * 100) / sum > LIMIT_PARTICIPATION;
+    return (amount * 100) / sum > limitParticipation;
   }
 
   function poolBalance() public view returns (uint256) {
@@ -128,7 +123,7 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
     Loan storage curLoan = loans[loanRecipient];
     require(curLoan.amount > 0, "LOAN_ALREADY_PAID");
     require(amount == curLoan.installmentAmount, "NOT_INSTALLMENT_AMOUNT");
-    curLoan.interest = (curLoan.amount * curLoan.currentInterest) / 12;
+    curLoan.currentInterest = (curLoan.amount * curLoan.currentInterest) / 12;
     curLoan.amount -= amount;
   }
 
