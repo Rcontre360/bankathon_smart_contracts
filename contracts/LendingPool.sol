@@ -16,7 +16,7 @@ interface IScoreCalculator {
     uint8 installmentMonths,
     address recipient,
     bytes32 requestId
-  ) external;
+  ) external returns (bool);
 }
 
 contract LendingPool is Context, Ownable, ReentrancyGuard {
