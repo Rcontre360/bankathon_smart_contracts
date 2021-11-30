@@ -13,7 +13,8 @@ interface IScoreCalculator {
   function canApproveLoan(
     uint256 amount,
     uint256 interest,
-    uint8 installmentMonths,
+    uint8 installmentNumber,
+    uint8 installmentAmount,
     address recipient,
     bytes32 requestId
   ) external returns (bool);
@@ -23,9 +24,10 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
   struct Loan {
     uint256 amount;
     uint256 interest;
+    uint256 currentInterest;
     uint256 startDate;
-    uint256 paidAmount;
-    uint8 installmentMonths;
+    uint8 installmentNumber;
+    uint8 installmentAmount;
     address recipient;
   }
 
@@ -39,21 +41,17 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
   /**
    * @dev peggToken is 1:1 with asset token. Helps calculate and represent share of the pool
    */
-  IERC20 assetToken;
-  IScoreCalculator scoreCalculator;
-  LendToken peggToken;
-  uint256 public expectedInterest;
-  uint256 public LIMIT_PARTICIPATION;
+  IERC20 public assetToken;
+  IScoreCalculator public scoreCalculator;
+  LendToken public peggToken;
+  int256 public expectedInterest; //this is EXPECTED interest received. It assumes all debt will be paid.
+  uint256 public LIMIT_PARTICIPATION = 100;
   uint256 public BORROWING_INTEREST_RATE;
   mapping(address => Loan) public loans;
 
-  constructor(
-    IERC20 _assetToken,
-    LendToken _peggToken,
-    IScoreCalculator _scoreCalculator
-  ) {
+  constructor(IERC20 _assetToken, IScoreCalculator _scoreCalculator) {
     assetToken = _assetToken;
-    peggToken = _peggToken;
+    peggToken = new LendToken();
     scoreCalculator = _scoreCalculator;
   }
 
@@ -93,10 +91,11 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
     return assetToken.balanceOf(address(this));
   }
 
-  function crateLoan(
+  function createLoan(
     uint256 amount,
     uint256 interest,
-    uint8 installmentMonths,
+    uint8 installmentNumber,
+    uint8 installmentAmount,
     address recipient,
     bytes32 requestId
   ) public {
@@ -104,7 +103,8 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
       scoreCalculator.canApproveLoan(
         amount,
         interest,
-        installmentMonths,
+        installmentNumber,
+        installmentAmount,
         recipient,
         requestId
       ),
@@ -113,14 +113,26 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
     Loan memory nxtLoan;
     nxtLoan.amount = amount;
     nxtLoan.interest = interest;
-    nxtLoan.installmentMonths = installmentMonths;
+    nxtLoan.installmentNumber = installmentNumber;
+    nxtLoan.installmentAmount = installmentAmount;
     nxtLoan.recipient = recipient;
     nxtLoan.startDate = block.timestamp;
     loans[recipient] = nxtLoan;
+
+    //@TODO update global interest rate
     assetToken.transfer(recipient, amount);
   }
 
   function payLoan(uint256 amount, address loanRecipient) public {
-    loans[loanRecipient].paidAmount += amount;
+    //@TODO update global interest rate
+    Loan storage curLoan = loans[loanRecipient];
+    require(curLoan.amount > 0, "LOAN_ALREADY_PAID");
+    require(amount == curLoan.installmentAmount, "NOT_INSTALLMENT_AMOUNT");
+    curLoan.interest = (curLoan.amount * curLoan.currentInterest) / 12;
+    curLoan.amount -= amount;
+  }
+
+  function getLoan(address borrower) public view returns (Loan memory) {
+    return loans[borrower];
   }
 }

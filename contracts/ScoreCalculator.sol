@@ -28,10 +28,12 @@ contract ScoreCalculator is AirnodeClient {
         uint256 amount,
         uint256 interest,
         uint8 installmentMonths,
+        uint8 installmentAmount,
         address recipient,
         bytes32 requestId
     ) public view returns (bool) {
         //get user data stored and calculate risk of loan
+        return true;
     }
 
     function makeRequest(
