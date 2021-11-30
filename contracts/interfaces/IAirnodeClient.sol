@@ -9,4 +9,10 @@ interface IAirnodeClient {
         address designatedWallet,
         bytes calldata parameters
     ) external;
+
+    function fulfill(
+        bytes32 requestId,
+        uint256 statusCode,
+        bytes32 data
+    ) external;
 }

@@ -9,10 +9,22 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./LendToken.sol";
 
+interface IScoreCalculator {
+  function canApproveLoan(
+    uint256 amount,
+    uint256 interest,
+    uint8 installmentMonths,
+    address recipient,
+    bytes32 requestId
+  ) external;
+}
+
 contract LendingPool is Context, Ownable, ReentrancyGuard {
   struct Loan {
     uint256 amount;
     uint256 interest;
+    uint256 startDate;
+    uint256 paidAmount;
     uint8 installmentMonths;
     address recipient;
   }
@@ -24,16 +36,25 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
     uint256 creditDecision;
   }
 
+  /**
+   * @dev peggToken is 1:1 with asset token. Helps calculate and represent share of the pool
+   */
   IERC20 assetToken;
+  IScoreCalculator scoreCalculator;
   LendToken peggToken;
+  uint256 public expectedInterest;
   uint256 public LIMIT_PARTICIPATION;
-  uint256 public LENDING_INTEREST_RATE;
   uint256 public BORROWING_INTEREST_RATE;
   mapping(address => Loan) public loans;
 
-  constructor(IERC20 _assetToken, LendToken _peggToken) {
+  constructor(
+    IERC20 _assetToken,
+    LendToken _peggToken,
+    IScoreCalculator _scoreCalculator
+  ) {
     assetToken = _assetToken;
     peggToken = _peggToken;
+    scoreCalculator = _scoreCalculator;
   }
 
   /**
@@ -59,16 +80,8 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
     LIMIT_PARTICIPATION = amount;
   }
 
-  function setLendingInterest(uint256 amount) public onlyOwner {
-    LENDING_INTEREST_RATE = amount;
-  }
-
   function setBorrowingInterest(uint256 amount) public onlyOwner {
     BORROWING_INTEREST_RATE = amount;
-  }
-
-  function poolBalance() public view returns (uint256) {
-    return assetToken.balanceOf(address(this));
   }
 
   function exceedsDepositLimit(uint256 amount) public view returns (bool) {
@@ -76,18 +89,38 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
     return (amount * 100) / sum > LIMIT_PARTICIPATION;
   }
 
+  function poolBalance() public view returns (uint256) {
+    return assetToken.balanceOf(address(this));
+  }
+
   function crateLoan(
     uint256 amount,
     uint256 interest,
     uint8 installmentMonths,
-    address recipient
+    address recipient,
+    bytes32 requestId
   ) public {
+    require(
+      scoreCalculator.canApproveLoan(
+        amount,
+        interest,
+        installmentMonths,
+        recipient,
+        requestId
+      ),
+      "CANNOT_APPROVE_LOAN"
+    );
     Loan memory nxtLoan;
     nxtLoan.amount = amount;
     nxtLoan.interest = interest;
     nxtLoan.installmentMonths = installmentMonths;
     nxtLoan.recipient = recipient;
+    nxtLoan.startDate = block.timestamp;
     loans[recipient] = nxtLoan;
     assetToken.transfer(recipient, amount);
+  }
+
+  function payLoan(uint256 amount, address loanRecipient) public {
+    loans[loanRecipient].paidAmount += amount;
   }
 }
