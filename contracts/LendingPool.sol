@@ -44,9 +44,10 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
   IERC20 public assetToken;
   IScoreCalculator public scoreCalculator;
   LendToken public peggToken;
-  int256 public expectedInterest; //this is EXPECTED interest received. It assumes all debt will be paid.
+  uint256 public expectedInterest; //this is EXPECTED interest received. It assumes all debt will be paid.
   uint256 public limitParticipation = 100;
-  mapping(address => Loan) public loans;
+  mapping(address => uint256) public currentLoan;
+  mapping(address => mapping(uint256 => Loan)) loans;
 
   constructor(IERC20 _assetToken, IScoreCalculator _scoreCalculator) {
     assetToken = _assetToken;
@@ -77,12 +78,12 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
     limitParticipation = amount;
   }
 
-  function exceedsDepositLimit(uint256 amount) public view returns (bool) {
+  function exceedsDepositLimit(uint256 amount) internal view returns (bool) {
     uint256 sum = amount + poolBalance();
     return (amount * 100) / sum > limitParticipation;
   }
 
-  function poolBalance() public view returns (uint256) {
+  function poolBalance() internal view returns (uint256) {
     return assetToken.balanceOf(address(this));
   }
 
@@ -112,22 +113,29 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
     nxtLoan.installmentAmount = installmentAmount;
     nxtLoan.recipient = recipient;
     nxtLoan.startDate = block.timestamp;
-    loans[recipient] = nxtLoan;
 
-    //@TODO update global interest rate
+    uint256 loanNumber = currentLoan[recipient];
+    loans[recipient][loanNumber] = nxtLoan;
+    currentLoan[recipient] = loanNumber + 1;
+
+    uint256 paidAmount = (amount * (interest + 100)) / 100;
+    expectedInterest += ((paidAmount + poolBalance()) * 100) / poolBalance() - 100;
     assetToken.transfer(recipient, amount);
   }
 
-  function payLoan(uint256 amount, address loanRecipient) public {
-    //@TODO update global interest rate
-    Loan storage curLoan = loans[loanRecipient];
+  function payLoan(
+    uint256 amount,
+    uint256 loanId,
+    address loanRecipient
+  ) public {
+    Loan storage curLoan = loans[loanRecipient][loanId];
     require(curLoan.amount > 0, "LOAN_ALREADY_PAID");
     require(amount == curLoan.installmentAmount, "NOT_INSTALLMENT_AMOUNT");
     curLoan.currentInterest = (curLoan.amount * curLoan.currentInterest) / 12;
     curLoan.amount -= amount;
   }
 
-  function getLoan(address borrower) public view returns (Loan memory) {
-    return loans[borrower];
+  function getLoan(address borrower, uint256 loanId) public view returns (Loan memory) {
+    return loans[borrower][loanId];
   }
 }

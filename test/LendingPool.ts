@@ -91,8 +91,10 @@ describe("LendingPool", function () {
       loan.requestId,
     );
     const balancePostLoan = await this.token.balanceOf(owner.address)
-    expect(Number(balancePostLoan) - Number(balancePreLoan)).to.equal(loan.amount);
+    const expectedInterest = await this.pool.expectedInterest();
 
+    expect(Number(balancePostLoan) - Number(balancePreLoan)).to.equal(loan.amount);
+    expect(Number(expectedInterest)).to.be.greaterThan(0);
   })
 
 });
