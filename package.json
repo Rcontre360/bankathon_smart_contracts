@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "hardhat compile",
-    "setup": "hardhat run ./scripts/setup.js --network testnet",
+    "setup": "hardhat run ./scripts/setup.ts --network testnet",
     "deploy": "hardhat run scripts/deploy.ts --network testnet",
     "console": "hardhat console --network testnet",
     "test": "hardhat test",

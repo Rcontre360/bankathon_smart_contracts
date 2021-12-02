@@ -121,8 +121,9 @@ async function main() {
   console.log("Request fulfilled, getting response...");
 
   // Read the fulfilled result from the blockchain
-  const result = showResult(await exampleClient.fulfilledData(requestId));
-  console.log(`Got response: ${result}`);
+  console.log(`Raw ${await exampleClient.fulfilledData(requestId)}`)
+  //const result = showResult(await exampleClient.fulfilledData(requestId));
+  //console.log(`Got response: ${result}`);
 }
 
 function weiToEth(wei: BigNumber, precision = 6) {

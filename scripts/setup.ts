@@ -13,8 +13,8 @@ type Config = {
 
 async function main() {
   // Get the config object with Airnode and API info
-  const OracleClient = await ethers.getContractFactory("OracleClient");
-  const exampleClient = await OracleClient.attach('0x4601966677A43822BC11cCd147a3d2d8443a223e');
+  const ExampleClient = await ethers.getContractFactory("ExampleClient");
+  const exampleClient = await ExampleClient.attach('0x4601966677A43822BC11cCd147a3d2d8443a223e');
 
   const config = {
     airnodeContractAddress: "0x1190a5e1f2afe4c8128fd820a7ac85a95a9e6e3e",

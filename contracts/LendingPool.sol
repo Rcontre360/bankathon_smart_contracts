@@ -39,11 +39,11 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
   }
 
   /**
-   * @dev peggToken is 1:1 with asset token. Helps calculate and represent share of the pool
+   * @dev lendToken is 1:1 with asset token. Helps calculate and represent share of the pool
    */
   IERC20 public assetToken;
   IScoreCalculator public scoreCalculator;
-  LendToken public peggToken;
+  LendToken public lendToken;
   uint256 public expectedInterest; //this is EXPECTED interest received. It assumes all debt will be paid.
   uint256 public limitParticipation = 100;
   mapping(address => uint256) public currentLoan;
@@ -51,7 +51,7 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
 
   constructor(IERC20 _assetToken, IScoreCalculator _scoreCalculator) {
     assetToken = _assetToken;
-    peggToken = new LendToken();
+    lendToken = new LendToken();
     scoreCalculator = _scoreCalculator;
   }
 
@@ -64,13 +64,13 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
 
     address sender = _msgSender();
     assetToken.transferFrom(sender, address(this), amount);
-    peggToken.mint(sender, amount);
+    lendToken.mint(sender, amount);
   }
 
   function withdraw(uint256 amount) public nonReentrant {
     require(amount > 0, "NO_ZERO_AMOUNT");
     address sender = _msgSender();
-    peggToken.burnFrom(sender, amount);
+    lendToken.burnFrom(sender, amount);
     assetToken.transfer(sender, amount);
   }
 
@@ -119,7 +119,7 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
     currentLoan[recipient] = loanNumber + 1;
 
     uint256 paidAmount = (amount * (interest + 100)) / 100;
-    expectedInterest += ((paidAmount + poolBalance()) * 100) / poolBalance() - 100;
+    expectedInterest += ((paidAmount + poolBalance() - amount) * 100) / poolBalance() - 100;
     assetToken.transfer(recipient, amount);
   }
 
@@ -130,9 +130,21 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
   ) public {
     Loan storage curLoan = loans[loanRecipient][loanId];
     require(curLoan.amount > 0, "LOAN_ALREADY_PAID");
-    require(amount == curLoan.installmentAmount, "NOT_INSTALLMENT_AMOUNT");
-    curLoan.currentInterest = (curLoan.amount * curLoan.currentInterest) / 12;
-    curLoan.amount -= amount;
+    require(amount >= curLoan.installmentAmount, "NOT_INSTALLMENT_AMOUNT");
+
+    console.log("payLoan % % %", curLoan.interest, curLoan.amount, curLoan.currentInterest);
+    console.log("payLoan %", curLoan.installmentAmount);
+    uint256 finalAmount = curLoan.installmentAmount > curLoan.amount
+      ? curLoan.amount
+      : curLoan.installmentAmount;
+
+    assetToken.transferFrom(loanRecipient, address(this), finalAmount);
+
+    curLoan.currentInterest =
+      ((curLoan.amount * curLoan.interest) / 100) /
+      curLoan.installmentNumber;
+    curLoan.amount -= finalAmount - curLoan.currentInterest;
+    lendToken.addPoolGains(curLoan.currentInterest);
   }
 
   function getLoan(address borrower, uint256 loanId) public view returns (Loan memory) {
