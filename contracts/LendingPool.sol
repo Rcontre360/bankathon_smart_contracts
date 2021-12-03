@@ -132,18 +132,21 @@ contract LendingPool is Context, Ownable, ReentrancyGuard {
     require(curLoan.amount > 0, "LOAN_ALREADY_PAID");
     require(amount >= curLoan.installmentAmount, "NOT_INSTALLMENT_AMOUNT");
 
-    console.log("payLoan % % %", curLoan.interest, curLoan.amount, curLoan.currentInterest);
-    console.log("payLoan %", curLoan.installmentAmount);
     uint256 finalAmount = curLoan.installmentAmount > curLoan.amount
       ? curLoan.amount
       : curLoan.installmentAmount;
+    uint256 prevAmount = curLoan.amount;
 
     assetToken.transferFrom(loanRecipient, address(this), finalAmount);
 
-    curLoan.currentInterest =
-      ((curLoan.amount * curLoan.interest) / 100) /
-      curLoan.installmentNumber;
-    curLoan.amount -= finalAmount - curLoan.currentInterest;
+    unchecked {
+      curLoan.currentInterest = ((curLoan.amount * curLoan.interest) / 100) / 12;
+      uint256 principal = curLoan.installmentAmount - curLoan.currentInterest;
+      curLoan.amount -= principal;
+    }
+
+    if (curLoan.amount > prevAmount) curLoan.amount = 0;
+
     lendToken.addPoolGains(curLoan.currentInterest);
   }
 

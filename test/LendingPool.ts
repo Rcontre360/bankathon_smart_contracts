@@ -107,26 +107,25 @@ describe("LendingPool", function () {
     const balanceBeforePay = await this.lendToken.balanceOf(owner.address);
 
     await this.token.approve(this.pool.address, installmentNumber * installmentAmount);
-    for await (let i of new Array(installmentNumber))
-      await this.pool.payLoan(installmentAmount, 0, owner.address);
+    for await (let i of new Array(installmentNumber)) {
+      const loan = await this.pool.getLoan(owner.address, 0)
+      if (Number(loan.amount) > 0)
+        await this.pool.payLoan(installmentAmount, 0, owner.address);
+    }
 
     const balanceAfterPay = await this.lendToken.balanceOf(owner.address);
-    expect(Number(balanceAfterPay) - Number(balanceBeforePay)).to.be.within(0, 100);
-    console.log({
-      prev: balanceBeforePay.toString(),
-      post: balanceAfterPay.toString(),
-      gains: (await this.lendToken.poolGains()).toString(),
-      supply: (await this.lendToken.totalSupply()).toString(),
-      poolBalance: (await this.token.balanceOf(this.pool.address)).toString(),
-      realBalance: (await this.lendToken.realBalance(owner.address)).toString(),
-    });
+    expect(Number(balanceAfterPay) - Number(balanceBeforePay)).to.be.within(0, 200);
+    expect(Number(await this.lendToken.poolGains())).to.be.within(100, 200);
   });
 
   it("Should withdraw amount properly", async function () {
-    //const [owner] = await ethers.getSigners();
-    //await this.lendToken.approve(this.pool.address, '9900');
-    //await this.pool.withdraw('9900');
-    //const ownerBalance = await this.lendToken.balanceOf(owner.address);
-    //console.log({final: ownerBalance.toString()})
+    const [owner] = await ethers.getSigners();
+    const ownerPreAsset = await this.token.balanceOf(owner.address);
+
+    await this.lendToken.approve(this.pool.address, '9900');
+    await this.pool.withdraw('9900');
+
+    const ownerAssetBalance = await this.token.balanceOf(owner.address);
+    expect(Number(ownerAssetBalance)).to.be.greaterThan(Number(ownerPreAsset));
   });
 });

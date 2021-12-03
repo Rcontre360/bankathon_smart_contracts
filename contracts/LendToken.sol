@@ -77,7 +77,8 @@ contract LendToken is Context, Ownable, IERC20 {
     }
 
     function getUserGains(address user) public view returns (uint256) {
-        uint256 sharePercentage = (_balances[user] * 100) / totalSupply();
+        uint256 supply = totalSupply();
+        uint256 sharePercentage = supply == 0 ? 0 : (_balances[user] * 100) / totalSupply();
         return (poolGains * sharePercentage) / 100;
     }
 
