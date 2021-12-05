@@ -18,21 +18,17 @@ describe("LendingPool", function () {
 
     const LendingPool = await ethers.getContractFactory("LendingPool");
     const AssetToken = await ethers.getContractFactory("MockToken");
-    const ScoreCalculator = await ethers.getContractFactory("ScoreCalculator");
     const LendToken = await ethers.getContractFactory("LendToken");
 
     this.token = await AssetToken.deploy();
-    this.calculator = await ScoreCalculator.deploy(randomAddress());
-    this.pool = await LendingPool.deploy(this.token.address, this.calculator.address);
+    this.pool = await LendingPool.deploy(this.token.address);
 
     const assetAddress = await this.pool.assetToken();
-    const calculatorAddress = await this.pool.scoreCalculator();
     const lendTokenAddress = await this.pool.lendToken();
 
     this.lendToken = LendToken.attach(lendTokenAddress);
 
     expect(assetAddress).to.equal(this.token.address);
-    expect(calculatorAddress).to.equal(this.calculator.address);
     expect(lendTokenAddress.length).to.equal(42);
   });
 
@@ -74,6 +70,17 @@ describe("LendingPool", function () {
     );
   });
 
+  it("Should register borrower info", async function () {
+    const [owner] = await ethers.getSigners();
+
+    await this.pool.registerBorrower(
+      owner.address, 24, 1, 350, 4, 5, true
+    );
+    const borrower = await this.pool.borrowerData(owner.address);
+    console.log(borrower)
+
+  })
+
   it("Should create loan, fund borrower and update expected interest.", async function () {
     const [owner] = await ethers.getSigners();
     const loan = {
@@ -82,7 +89,6 @@ describe("LendingPool", function () {
       installmentNumber: 24,
       installmentAmount: 58,
       recipient: owner.address,
-      requestId: ethers.utils.formatBytes32String("some data"),
     };
     const balancePreLoan = await this.token.balanceOf(owner.address);
     await this.pool.createLoan(
@@ -91,7 +97,6 @@ describe("LendingPool", function () {
       loan.installmentNumber,
       loan.installmentAmount,
       loan.recipient,
-      loan.requestId
     );
     const balancePostLoan = await this.token.balanceOf(owner.address);
     const expectedInterest = await this.pool.expectedInterest();
@@ -128,4 +133,5 @@ describe("LendingPool", function () {
     const ownerAssetBalance = await this.token.balanceOf(owner.address);
     expect(Number(ownerAssetBalance)).to.be.greaterThan(Number(ownerPreAsset));
   });
+
 });
